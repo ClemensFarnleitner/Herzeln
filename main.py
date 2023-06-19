@@ -1,18 +1,28 @@
-import PySimpleGUI as sg
+import webbrowser
+import http.server
+import socketserver
+import os
 
-sg.theme('DarkAmber')   # Add a touch of color
-# All the stuff inside your window.
-layout = [  [sg.Text('Some text on Row 1')],
-            [sg.Text('Enter something on Row 2'), sg.InputText()],
-            [sg.Button('Ok'), sg.Button('Cancel')] ]
+# Set the path to your HTML file
+html_file_path = '/Users/clemens/Herzeln/Herzeln/test.html'
 
-# Create the Window
-window = sg.Window('Window Title', layout)
-# Event Loop to process "events" and get the "values" of the inputs
-while True:
-    event, values = window.read()
-    if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
-        break
-    print('You entered ', values[0])
+# Create a temporary directory for serving the HTML file
+tmp_dir = 'tmp'
+os.makedirs(tmp_dir, exist_ok=True)
+os.chdir(tmp_dir)
+with open(html_file_path, 'r') as file:
+    html_content = file.read()
+with open('index.html', 'w') as file:
+    file.write(html_content)
 
-window.close()
+# Start a temporary server to serve the HTML file
+PORT = 8000
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=os.getcwd(), **kwargs)
+
+with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    print("Server running at localhost:", PORT)
+    webbrowser.open_new_tab(f'http://localhost:{PORT}/index.html')
+    httpd.serve_forever()
